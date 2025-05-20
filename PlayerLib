@@ -1,0 +1,148 @@
+local Players = game:GetService("Players")
+local PlayerLib = {}
+PlayerLib.__index = PlayerLib
+
+function PlayerLib.new(Player : Player)
+	local self = setmetatable({Player = Player}, PlayerLib)
+	return self
+end
+
+function PlayerLib:ChangeHealthTo(NewHealth : number)
+	local Character = self.Player.Character
+	local Humanoid : Humanoid = Character:FindFirstChildOfClass("Humanoid")
+	
+	if not Humanoid then
+		error("Humanoid not found")
+		return
+	end
+	
+	Humanoid.Health = NewHealth
+end
+
+function PlayerLib:LoseHealth(Damage : number)
+	local Character = self.Player.Character
+	local Humanoid : Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+	if not Humanoid then
+		error("Humanoid not found")
+		return
+	end
+	
+	Humanoid:TakeDamage(Damage)
+end
+
+function PlayerLib:MoveTo(Position : Vector3 | Part)
+	local Character = self.Player.Character
+	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+	local p
+	
+	if Position::Part then
+		p = Position.Position
+	elseif Position::Vector3 then
+		p = Position
+	end
+	
+	HumanoidRootPart.Position = p
+end
+
+function PlayerLib:Check(subject: Player | string | number): boolean
+	local target: Player?
+
+	if typeof(subject) == "Instance" and subject:IsA("Player") then
+		target = subject
+	elseif typeof(subject) == "string" then
+		target = game.Players:FindFirstChild(subject)
+	elseif typeof(subject) == "number" then
+		target = game.Players:GetPlayers()[subject]
+	end
+
+	if target and self.Player == target then
+		return true
+	end
+
+	return false
+end
+
+function PlayerLib:AddState(Value : any, Name : string)
+	local Player : Player = self.Player
+	Player:SetAttribute(Name, Value)
+end
+
+function PlayerLib:CheckState(stateName: string): boolean
+	return self.Player:GetAttribute(stateName) ~= nil
+end
+
+function PlayerLib:RemoveState(StateName : string)
+	local Player : Player = self.Player
+	Player:SetAttribute(StateName, nil)
+end
+
+function PlayerLib:LoadData(defaultData: {[string]: any}, data: {[string]: any}?, useLeaderstats: boolean?)
+	local player = self.Player
+
+	local dataFolder = Instance.new("Folder")
+	dataFolder.Name = useLeaderstats and "leaderstats" or "Data"
+	dataFolder.Parent = player
+
+	for name, defaultValue in pairs(defaultData) do
+		local value = if data and data[name] ~= nil then data[name] else defaultValue
+		local valueType = typeof(value)
+
+		local instanceType = ({
+			number = "IntValue",
+			string = "StringValue",
+			boolean = "BoolValue"
+		})[valueType]
+
+		if not instanceType then
+			warn(`Unsupported value type for {name}: {valueType}`)
+			continue
+		end
+
+		local valObject = Instance.new(instanceType)
+		valObject.Name = name
+		valObject.Value = value
+		valObject.Parent = dataFolder
+	end
+
+	print("Data loaded for", player.Name)
+end
+
+function PlayerLib:ChangeData(targetName: string, newValue: any)
+	local player = self.Player
+	local dataFolder = player:FindFirstChild("Data") or player:FindFirstChild("leaderstats")
+	if not dataFolder then
+		warn("No data folder found for player:", player.Name)
+		return
+	end
+
+	local target = dataFolder:FindFirstChild(targetName)
+	if not target then
+		warn(`Data value "{targetName}" not found`)
+		return
+	end
+
+	local supportedTypes = {
+		number = true,
+		string = true,
+		boolean = true,
+	}
+
+	local valueType = typeof(newValue)
+	if not supportedTypes[valueType] then
+		warn(`Unsupported value type for "{targetName}": {valueType}`)
+		return
+	end
+
+	if target:IsA("IntValue") or target:IsA("NumberValue") then
+		target.Value = tonumber(newValue) or 0
+	elseif target:IsA("StringValue") then
+		target.Value = tostring(newValue)
+	elseif target:IsA("BoolValue") then
+		target.Value = not not newValue
+	else
+		warn(`Target "{targetName}" is not a supported ValueObject (got {target.ClassName})`)
+	end
+end
+
+return PlayerLib
