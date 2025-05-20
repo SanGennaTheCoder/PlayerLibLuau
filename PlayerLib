@@ -2,11 +2,13 @@ local Players = game:GetService("Players")
 local PlayerLib = {}
 PlayerLib.__index = PlayerLib
 
+-- constructor
 function PlayerLib.new(Player : Player)
 	local self = setmetatable({Player = Player}, PlayerLib)
 	return self
 end
 
+-- Changes the health to EXACTLY the specified number
 function PlayerLib:ChangeHealthTo(NewHealth : number)
 	local Character = self.Player.Character
 	local Humanoid : Humanoid = Character:FindFirstChildOfClass("Humanoid")
@@ -19,6 +21,7 @@ function PlayerLib:ChangeHealthTo(NewHealth : number)
 	Humanoid.Health = NewHealth
 end
 
+-- Subtracts the specified number to the current player health
 function PlayerLib:LoseHealth(Damage : number)
 	local Character = self.Player.Character
 	local Humanoid : Humanoid = Character:FindFirstChildOfClass("Humanoid")
@@ -31,6 +34,7 @@ function PlayerLib:LoseHealth(Damage : number)
 	Humanoid:TakeDamage(Damage)
 end
 
+-- Moves the player to a specific position, the argument can be a vector3 or a part.
 function PlayerLib:MoveTo(Position : Vector3 | Part)
 	local Character = self.Player.Character
 	local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
@@ -45,6 +49,7 @@ function PlayerLib:MoveTo(Position : Vector3 | Part)
 	HumanoidRootPart.Position = p
 end
 
+-- Checks if the player argument is equal to the self player
 function PlayerLib:Check(subject: Player | string | number): boolean
 	local target: Player?
 
@@ -63,20 +68,29 @@ function PlayerLib:Check(subject: Player | string | number): boolean
 	return false
 end
 
+-- Adds an attribute to the player and sets it to the specified value
 function PlayerLib:AddState(Value : any, Name : string)
 	local Player : Player = self.Player
 	Player:SetAttribute(Name, Value)
 end
 
+-- Checks if a player has an active attribute named as the argument
 function PlayerLib:CheckState(stateName: string): boolean
 	return self.Player:GetAttribute(stateName) ~= nil
 end
 
+-- Changes the value of the attribute specified
+function PlayerLib:ChangeStateValue(StateName : string, NewValue)
+	self.Player:SetAttribute(StateName, NewValue)
+end
+
+-- Removes the attribute specified (sets it's value to nil)
 function PlayerLib:RemoveState(StateName : string)
 	local Player : Player = self.Player
 	Player:SetAttribute(StateName, nil)
 end
 
+-- Adds to the player a folder named Data if useLeaderstats is false, and leaderstats if it's true, and loads the data or if it's nil it sets it to the default table
 function PlayerLib:LoadData(defaultData: {[string]: any}, data: {[string]: any}?, useLeaderstats: boolean?)
 	local player = self.Player
 
@@ -108,6 +122,7 @@ function PlayerLib:LoadData(defaultData: {[string]: any}, data: {[string]: any}?
 	print("Data loaded for", player.Name)
 end
 
+-- Changes the value of a specified data value
 function PlayerLib:ChangeData(targetName: string, newValue: any)
 	local player = self.Player
 	local dataFolder = player:FindFirstChild("Data") or player:FindFirstChild("leaderstats")
